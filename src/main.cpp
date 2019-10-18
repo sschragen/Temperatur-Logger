@@ -1,5 +1,12 @@
 #include <Arduino.h>
 #include <TaskScheduler.h>
+#include <OneWire.h> 
+#include <DallasTemperature.h>
+
+#define ONE_WIRE_BUS 2 
+OneWire oneWire(ONE_WIRE_BUS); 
+DallasTemperature sensors(&oneWire);
+int numberOfDevices;
 
 // Callback methods prototypes
 void t1Callback();
@@ -18,8 +25,13 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("Scheduler TEST");
+
+  sensors.begin(); 
+  numberOfDevices = sensors.getDeviceCount();
+
+
   runner.init();
-  
+
 
   Serial.println("Initialized scheduler");
   
@@ -31,6 +43,7 @@ void setup()
   
   t1.enable();
   Serial.println("Enabled t1");
+   
 }
 
 void loop() {
