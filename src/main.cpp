@@ -18,6 +18,9 @@ const char* mqttPassword = "none";              // MQTT Passwort
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+#define MQTT_TOPIC_VORLAUF "TempLogger/Vorlauf"
+#define MQTT_TOPIC_RUECKLAUF "TempLogger/Ruecklauf"
+#define MQTT_TOPIC_UPDATE "TempLogger/Update"
 
 TaskManager taskManager;
 void TemperaturMessen(uint32_t deltaTime); 
@@ -41,17 +44,14 @@ void TemperaturMessen(uint32_t deltaTime)
     float ruecklauf = sensors->getTempC(tempDeviceAddress); 
 
     // per mqtt weiterreichen
-    client.publish("TempLogger/Vorlauf"  , String  (vorlauf,'2').c_str()); 
-    client.publish("TempLogger/Ruecklauf", String(ruecklauf,'2').c_str());
+    client.publish(MQTT_TOPIC_VORLAUF  , String  (vorlauf,'2').c_str()); 
+    client.publish(MQTT_TOPIC_RUECKLAUF, String(ruecklauf,'2').c_str());
     Serial.println ("Temp 1 : "+String(vorlauf,'2')+"°C");
     Serial.println ("Temp 2 : "+String(vorlauf,'2')+"°C");
 }
 
-void setup()
+void setup_WIFI ()
 {
-  // put your setup code here, to run once:
-  Serial.begin(115200);
-  
   Serial.print("Connecting");
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED)
@@ -63,9 +63,10 @@ void setup()
 
   Serial.print("Connected, IP address: ");
   Serial.println(WiFi.localIP());
+};
 
-  
-
+void setup_MQTT ()
+{
   client.setServer(mqttServer, mqttPort);
 
   while (!client.connected()) 
@@ -83,7 +84,10 @@ void setup()
       delay(2000);
     }
   }
+};
 
+void setup_SENSOREN ()
+{
   oneWire = new OneWire(ONE_WIRE_BUS);
   sensors = new DallasTemperature(oneWire);
   sensors->setResolution (TEMPERATURE_PRECISION);
@@ -117,25 +121,27 @@ void setup()
           Serial.print(" but could not detect address. Check power and cabling");
       }
     }
+};
 
-  taskManager.StartTask(&taskTemperaturMessen); // start with turning it on
-
+void setup_OTA ()
+{
   ArduinoOTA.onStart([]() 
   {
     Serial.println("Start");
-    client.publish("TempLogger/Update"  , "gestartet ..."); 
+    client.publish(MQTT_TOPIC_UPDATE  , "gestartet ..."); 
   });
 
   ArduinoOTA.onEnd([]() 
   {
     Serial.println("\nEnd");
-    client.publish("TempLogger/Update"  , "beendet.");
+    client.publish(MQTT_TOPIC_UPDATE  , "beendet.");
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) 
   {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));;Serial.println();
-    client.publish("TempLogger/Update"  , String  (progress / (total / 100),'2').c_str()); 
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    Serial.println();
+    client.publish(MQTT_TOPIC_UPDATE  , String  (progress / (total / 100),'2').c_str()); 
   });
 
   ArduinoOTA.onError([](ota_error_t error) 
@@ -145,19 +151,19 @@ void setup()
     {
       case OTA_AUTH_ERROR:
         Serial.println("Begin Failed");
-        client.publish("TempLogger/Update"  , "Begin Failed");
+        client.publish(MQTT_TOPIC_UPDATE  , "Begin Failed");
         break;
       case OTA_CONNECT_ERROR:
         Serial.println("Connect Failed");
-        client.publish("TempLogger/Update"  , "Connect Failed");
+        client.publish(MQTT_TOPIC_UPDATE  , "Connect Failed");
         break;
       case OTA_RECEIVE_ERROR:
         Serial.println("Receive Failed");
-        client.publish("TempLogger/Update"  , "Receive Failed");
+        client.publish(MQTT_TOPIC_UPDATE  , "Receive Failed");
         break;
       case OTA_END_ERROR:
         Serial.println("End Failed");
-        client.publish("TempLogger/Update"  , "End Failed");
+        client.publish(MQTT_TOPIC_UPDATE  , "End Failed");
         break;
       
       default:
@@ -165,7 +171,19 @@ void setup()
     }
   });
   ArduinoOTA.begin();
+};
 
+void setup()
+{
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  
+  setup_WIFI ();
+  setup_MQTT ();
+  setup_SENSOREN ();
+  setup_OTA ();
+
+  taskManager.StartTask(&taskTemperaturMessen); // start with turning it on
   delay(5000);
 };
 
