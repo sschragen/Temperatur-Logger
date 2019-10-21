@@ -20,7 +20,7 @@ void TemperaturMessen(uint32_t deltaTime);
 FunctionTask taskTemperaturMessen(TemperaturMessen, MsToTaskTime(10000)); // turn on the led in 400ms
 
 #define ONE_WIRE_BUS 2
-#define TEMPERATURE_PRECISION 9
+#define TEMPERATURE_PRECISION 12
 int numberOfDevices;
 // We'll use this variable to store a found device address
 OneWire *oneWire;
@@ -33,13 +33,13 @@ void TemperaturMessen(uint32_t deltaTime)
     sensors->requestTemperatures(); // Send the command to get temperatures
 
     sensors->getAddress(tempDeviceAddress, 0);
-    int vorlauf = sensors->getTempC(tempDeviceAddress);
+    float vorlauf = sensors->getTempC(tempDeviceAddress);
     sensors->getAddress(tempDeviceAddress, 1);
-    int ruecklauf = sensors->getTempC(tempDeviceAddress); 
+    float ruecklauf = sensors->getTempC(tempDeviceAddress); 
 
     // per mqtt weiterreichen
-    client.publish("TempLogger/Vorlauf"  , String  (vorlauf).c_str()); 
-    client.publish("TempLogger/Ruecklauf", String(ruecklauf).c_str());
+    client.publish("TempLogger/Vorlauf"  , String  (vorlauf,'2').c_str()); 
+    client.publish("TempLogger/Ruecklauf", String(ruecklauf,'2').c_str());
 }
 
 void setup()
@@ -80,6 +80,7 @@ void setup()
 
   oneWire = new OneWire(ONE_WIRE_BUS);
   sensors = new DallasTemperature(oneWire);
+  sensors->setResolution (TEMPERATURE_PRECISION);
 
   numberOfDevices = sensors->getDeviceCount();
   Serial.print("Locating devices...");
