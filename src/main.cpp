@@ -4,13 +4,14 @@
 #include <PubSubClient.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+// aktuell
 
-const char* ssid = "Schragen2.4"; // Enter your WiFi name
-const char* password =  "warpdrive"; // Enter WiFi password
-const char* mqttServer = "prodesk.fritz.box";
-const int   mqttPort = 1883;
-const char* mqttUser = "TempLogger";
-const char* mqttPassword = "none";
+const char* ssid = "Schragen2.4";               // your WiFi name
+const char* password =  "warpdrive";            // your WiFi password
+const char* mqttServer = "prodesk.fritz.box";   // Adresse vom MQTT Server
+const int   mqttPort = 1883;                    // Port vom MQTT Server
+const char* mqttUser = "TempLogger";            // MQTT Anmeldename
+const char* mqttPassword = "none";              // MQTT Passwort
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -19,13 +20,12 @@ TaskManager taskManager;
 void TemperaturMessen(uint32_t deltaTime); 
 FunctionTask taskTemperaturMessen(TemperaturMessen, MsToTaskTime(10000)); // turn on the led in 400ms
 
-#define ONE_WIRE_BUS 16
-#define TEMPERATURE_PRECISION 12
-int numberOfDevices;
-// We'll use this variable to store a found device address
-OneWire *oneWire;
-DallasTemperature *sensors;
-DeviceAddress tempDeviceAddress;
+#define ONE_WIRE_BUS 16                   // connected pin
+#define TEMPERATURE_PRECISION 12          // 12 Bit Resolution
+int numberOfDevices;                      // Anzahl an Sensoren
+OneWire *oneWire;                         // 
+DallasTemperature *sensors;               //
+DeviceAddress tempDeviceAddress;          // We'll use this variable to store a found device address
 
 void TemperaturMessen(uint32_t deltaTime)
 {
@@ -62,7 +62,6 @@ void setup()
   Serial.println(WiFi.localIP());
 
   client.setServer(mqttServer, mqttPort);
-  //client.setCallback(callback);
 
   while (!client.connected()) 
   {
