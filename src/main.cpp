@@ -125,6 +125,17 @@ void setup_SENSOREN ()
 
 void setup_OTA ()
 {
+  // OTA Settings
+ 
+  // Port defaults to 8266
+  // ArduinoOTA.setPort(8266);
+ 
+  // Hostname defaults to esp8266-[ChipID]
+  ArduinoOTA.setHostname("TempLogger");
+ 
+  // No authentication by default
+  // ArduinoOTA.setPassword((const char *)"1234");
+
   ArduinoOTA.onStart([]() 
   {
     Serial.println("Start");
