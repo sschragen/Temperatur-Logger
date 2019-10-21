@@ -1,4 +1,5 @@
 #include <Arduino.h>
+//#include <TaskScheduler.h>
 #include <Task.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
@@ -196,7 +197,8 @@ void setup()
 
   taskManager.StartTask(&taskTemperaturMessen); // start with turning it on
   delay(5000);
-};
+   
+}
 
 void loop() 
 {
