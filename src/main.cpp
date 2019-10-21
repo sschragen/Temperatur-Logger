@@ -19,7 +19,7 @@ TaskManager taskManager;
 void TemperaturMessen(uint32_t deltaTime); 
 FunctionTask taskTemperaturMessen(TemperaturMessen, MsToTaskTime(10000)); // turn on the led in 400ms
 
-#define ONE_WIRE_BUS 2
+#define ONE_WIRE_BUS 16
 #define TEMPERATURE_PRECISION 12
 int numberOfDevices;
 // We'll use this variable to store a found device address
@@ -40,6 +40,8 @@ void TemperaturMessen(uint32_t deltaTime)
     // per mqtt weiterreichen
     client.publish("TempLogger/Vorlauf"  , String  (vorlauf,'2').c_str()); 
     client.publish("TempLogger/Ruecklauf", String(ruecklauf,'2').c_str());
+    Serial.println ("Temp 1 : "+String(vorlauf,'2')+"°C");
+    Serial.println ("Temp 2 : "+String(vorlauf,'2')+"°C");
 }
 
 void setup()
