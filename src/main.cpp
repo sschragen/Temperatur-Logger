@@ -19,9 +19,19 @@ const char* mqttPassword = "none";              // MQTT Passwort
 
 WiFiClient espClient;
 PubSubClient MQTT(espClient);
-#define MQTT_TOPIC_VORLAUF    "TempLogger/Vorlauf"
-#define MQTT_TOPIC_RUECKLAUF  "TempLogger/Ruecklauf"
-#define MQTT_TOPIC_UPDATE     "TempLogger/Update"
+#define MQTT_TOPIC_VORLAUF          "TempLogger/Vorlauf"
+#define MQTT_TOPIC_RUECKLAUF        "TempLogger/Ruecklauf"
+#define MQTT_TOPIC_UPDATE           "TempLogger/Update"
+#define MQTT_TOPIC_SENSOR_ANZ       "TempLogger/Anzahl Sensoren"
+#define MQTT_TOPIC_SENSOR_ADDRESS   "TempLogger/Adressse Sensor"
+
+#define MQTT_TOPIC_VORLAUF_THERMOSTATMODE     "TempLogger/Vorlauf/thermostatMode"
+#define MQTT_TOPIC_VORLAUF_SETPOINT           "TempLogger/Vorlauf/Setpoint"
+#define MQTT_TOPIC_VORLAUF_SETPOINTHIGH       "TempLogger/Vorlauf/SetpointHigh"
+#define MQTT_TOPIC_VORLAUF_SETPOINTLOW        "TempLogger/Vorlauf/SetpointLow"
+#define MQTT_TOPIC_VORLAUF_HUMIDITYAMBIENT    "TempLogger/Vorlauf/HumidityAmbient"
+
+
 void setup_MQTT (); 
 
 TaskManager taskManager;
@@ -50,8 +60,12 @@ void TemperaturMessen(uint32_t deltaTime)
     {
       setup_MQTT (); 
     }
-    MQTT.publish(MQTT_TOPIC_VORLAUF  , String  (vorlauf).c_str()); 
-    MQTT.publish(MQTT_TOPIC_RUECKLAUF, String(ruecklauf).c_str());
+  
+    MQTT.publish (MQTT_TOPIC_VORLAUF  , String  (vorlauf).c_str()); 
+    MQTT.publish (MQTT_TOPIC_RUECKLAUF, String(ruecklauf).c_str());
+
+    MQTT.publish (MQTT_TOPIC_VORLAUF_SETPOINT, String(vorlauf).c_str());
+
     Serial.println ("Temp 1 : "+String(vorlauf)+"°C");
     Serial.println ("Temp 2 : "+String(ruecklauf)+"°C");
 }
@@ -82,6 +96,11 @@ void setup_MQTT ()
     {
       Serial.println("connected");
       MQTT.publish("TempLogger/IP", WiFi.localIP().toString().c_str()); 
+      MQTT.publish (MQTT_TOPIC_VORLAUF_THERMOSTATMODE, "auto");
+      MQTT.publish (MQTT_TOPIC_VORLAUF_SETPOINT, "44.4");
+      MQTT.publish (MQTT_TOPIC_VORLAUF_SETPOINTHIGH, "100.0");
+      MQTT.publish (MQTT_TOPIC_VORLAUF_SETPOINTLOW, "0.0");
+      MQTT.publish (MQTT_TOPIC_VORLAUF_HUMIDITYAMBIENT, "55.5");
     } 
     else 
     {
@@ -95,7 +114,9 @@ void setup_MQTT ()
 void setup_SENSOREN ()
 {
   oneWire = new OneWire(ONE_WIRE_BUS);
-  oneWire->begin(D4);
+  //oneWire = new OneWire();
+  oneWire->begin(ONE_WIRE_BUS);
+  
   sensors = new DallasTemperature(oneWire);
   sensors->begin();
   sensors->setResolution (TEMPERATURE_PRECISION);
@@ -104,6 +125,7 @@ void setup_SENSOREN ()
   Serial.print("Locating devices...");
   Serial.print("Found ");
   Serial.print(numberOfDevices, DEC);
+  MQTT.publish(MQTT_TOPIC_SENSOR_ANZ, String(numberOfDevices).c_str());
   Serial.println(" devices.");    
 
   for(int i=0;i<numberOfDevices; i++)
@@ -111,15 +133,23 @@ void setup_SENSOREN ()
       // Search the wire for address
       if(sensors->getAddress(tempDeviceAddress, i))
       {
+          String STR_Address = "";
           Serial.print("Found device ");
           Serial.print(i, DEC);
           Serial.print(" with address: ");
+
           for (uint8_t i = 0; i < 8; i++)
           {
             if (tempDeviceAddress[i] < 16) 
+            {
               Serial.print("0");
+              STR_Address += "0";
+            };
             Serial.print(tempDeviceAddress[i], HEX);
+            STR_Address += tempDeviceAddress[i];
+            
           }
+          MQTT.publish((String("TempLogger/Adressse Sensor")+String(i)).c_str(), STR_Address.c_str() );
           Serial.println();
       } 
       else 
